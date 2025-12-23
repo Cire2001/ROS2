@@ -1,0 +1,121 @@
+architecture.txt
+
+# Architecture ROS - Exercice 3
+
+## Objectif
+Implémenter un convoi de robots où un leader est sélectionné pour guider les autres robots vers une destination commune, en utilisant l'algorithme A* pour la planification de chemin.
+
+## Nodes
+
+1. **robot_controller**
+   - Gère le comportement individuel de chaque robot
+   - Implémente la planification de chemin avec A*
+   - Gère le déplacement des robots (suivi du leader ou déplacement autonome)
+   - Détecte et évite les collisions potentielles
+   - Publie les positions et visualise les trajectoires
+
+2. **convoy_manager**
+   - Détermine le leader du convoi (robot le plus proche de la destination)
+   - Organise la formation du convoi en assignant qui suit qui
+   - Reçoit la destination finale du convoi
+   - Distribue les rôles aux robots (leader ou suiveur)
+   - Coordonne le démarrage et l'arrêt des robots
+
+3. **map_server** (de nav2)
+   - Fournit la carte de l'environnement
+
+4. **lifecycle_manager_map** (de nav2)
+   - Gère le cycle de vie du map_server
+
+5. **rviz2**
+   - Visualise l'environnement et les robots
+
+## Topics
+
+1. **/robot_[id]/current_position** (geometry_msgs/PoseStamped)
+   - Position actuelle de chaque robot
+   - Publié par: robot_controller
+   - Souscrit par: convoy_manager, autres robots pour le suivi
+
+2. **/robot_[id]/target_position** (geometry_msgs/Point)
+   - Position cible individuelle pour chaque robot
+   - Publié par: convoy_manager
+   - Souscrit par: robot_controller
+
+3. **/set_destination** (geometry_msgs/Point)
+   - Destination finale pour le convoi
+   - Publié par: utilisateur (via commande)
+   - Souscrit par: convoy_manager
+
+4. **/robot_[id]/follow_robot** (std_msgs/Int32)
+   - ID du robot à suivre
+   - Publié par: convoy_manager
+   - Souscrit par: robot_controller
+
+5. **/robot_[id]/stop_command** (std_msgs/Bool)
+   - Commande d'arrêt pour un robot
+   - Publié par: convoy_manager
+   - Souscrit par: robot_controller
+
+6. **/robot_[id]/visualization_marker** (visualization_msgs/Marker)
+   - Marqueurs pour visualiser les robots et leurs chemins
+   - Publié par: robot_controller
+   - Souscrit par: RViz
+
+7. **/convoy_destination_marker** (visualization_msgs/Marker)
+   - Marqueur pour visualiser la destination du convoi
+   - Publié par: convoy_manager
+   - Souscrit par: RViz
+
+## Services
+
+1. **/map_server/map** (nav_msgs/GetMap)
+   - Fournit la carte de l'environnement
+   - Fourni par: map_server
+   - Utilisé par: robot_controller, convoy_manager
+
+## Algorithmes utilisés
+
+1. **A*** (astar.py)
+   - Utilisé pour la planification de chemin
+   - Implémenté dans la classe AStar
+   - Trouve le chemin optimal entre la position actuelle et la destination
+
+2. **Détection de collision**
+   - Implémenté dans robot_controller.py
+   - Évite les collisions entre robots pendant le déplacement
+
+## Classes importantes
+
+1. **Map2D** (map2d.py)
+   - Gère la représentation de la carte pour la navigation
+   - Convertit entre les coordonnées ROS et les indices de cellule
+
+2. **Vec2D** (vec2d.py)
+   - Implémente les opérations vectorielles 2D
+   - Utilisé pour les calculs de position et de distance
+
+## Flux de données
+
+1. L'utilisateur définit une destination via le topic `/set_destination`
+2. Le convoy_manager arrête tous les robots
+3. Le convoy_manager analyse les positions des robots et détermine le leader (robot le plus proche de la destination)
+4. Le convoy_manager organise la formation du convoi en assignant qui suit qui
+5. Le leader reçoit la destination finale et calcule son chemin avec A*
+6. Les suiveurs reçoivent l'instruction de suivre un robot spécifique
+7. Le convoy_manager redémarre tous les robots
+8. Le leader suit son chemin calculé vers la destination
+9. Les suiveurs maintiennent une distance appropriée derrière le robot qu'ils suivent
+10. Tous les robots évitent les collisions pendant le déplacement
+11. Les positions des robots sont publiées et visualisées dans RViz
+
+## Réalisation
+
+Ce projet implémente un système de convoi hiérarchique où:
+- Un leader est dynamiquement sélectionné en fonction de sa proximité à la destination
+- Le leader planifie et suit un chemin optimal calculé par A* vers la destination
+- Les autres robots suivent en formation organisée
+- Le système gère la détection et l'évitement des collisions
+- La visualisation permet d'observer le comportement du convoi en temps réel
+
+Cette approche permet une navigation efficace en convoi tout en adaptant dynamiquement la structure du convoi en fonction de la destination.

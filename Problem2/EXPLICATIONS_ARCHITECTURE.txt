@@ -1,0 +1,97 @@
+# Architecture ROS - Exercice 2
+
+## Objectif
+Implémenter un algorithme de rendez-vous entre robots dans un environnement avec obstacles.
+
+## Nodes
+
+1. **robot_controller**
+   - Gère le comportement individuel de chaque robot
+   - Calcule les chemins via A*
+   - Suit les chemins calculés
+   - Répond aux commandes d'arrêt
+
+2. **rendezvous_manager**
+   - Coordonne le rendez-vous entre les robots
+   - Détermine quand et où les robots doivent se rencontrer
+   - Envoie les commandes d'arrêt quand les robots sont suffisamment proches
+
+3. **map_server** (de nav2)
+   - Fournit la carte de l'environnement
+
+4. **lifecycle_manager_map** (de nav2)
+   - Gère le cycle de vie du map_server
+
+5. **rviz2**
+   - Visualise l'environnement et les robots
+
+## Topics
+
+1. **/robot_[id]/current_position** (geometry_msgs/PoseStamped)
+   - Position actuelle de chaque robot
+   - Publié par: robot_controller
+   - Souscrit par: rendezvous_manager
+
+2. **/robot_[id]/target_position** (geometry_msgs/Point)
+   - Position cible individuelle pour chaque robot
+   - Publié par: rendezvous_manager
+   - Souscrit par: robot_controller
+
+3. **/robot_[id]/stop_command** (std_msgs/Bool)
+   - Commande d'arrêt pour un robot
+   - Publié par: rendezvous_manager
+   - Souscrit par: robot_controller
+
+4. **/trigger_rendezvous** (std_msgs/String)
+   - Déclenche l'algorithme de rendez-vous
+   - Publié par: utilisateur (via commande)
+   - Souscrit par: rendezvous_manager
+
+## Services
+
+1. **/map_server/map** (nav_msgs/GetMap)
+   - Fournit la carte de l'environnement
+   - Fourni par: map_server
+   - Utilisé par: robot_controller
+
+## Classes implémentées
+
+1. **SingleRobotController** (robot_controller.py)
+   - Contrôle un robot individuel
+   - Calcule et suit les chemins
+   - Répond aux commandes d'arrêt
+
+2. **RendezvousManager** (rendezvous_manager.py)
+   - Coordonne le rendez-vous entre les robots
+   - Détermine les cibles
+
+3. **Map2D** (map2d.py)
+   - Classe wrapper pour manipuler la carte
+   - Fournit des méthodes pour vérifier les obstacles
+
+4. **AStar** (astar.py)
+   - Implémente l'algorithme A* pour la planification de chemin
+   - Calcule le chemin optimal entre deux points
+
+5. **Vec2D** (vec2d.py)
+   - Représentation vectorielle pour les positions en 2D
+
+## Flux de données
+
+1. Les robots sont initialisés à différentes positions
+2. L'utilisateur déclenche le rendez-vous via le topic `/trigger_rendezvous`
+3. Le rendezvous_manager récupère les positions actuelles des robots
+4. Le rendezvous_manager assigne à chaque robot la position de l'autre comme cible
+5. Les robots calculent leur chemin via A* et commencent à se déplacer
+6. Le rendezvous_manager surveille continuellement les positions des robots
+7. Lorsque les robots sont suffisamment proches l'un de l'autre (distance < 3.0), 
+   le rendezvous_manager envoie une commande d'arrêt aux deux robots
+8. Les robots s'arrêtent à leur position actuelle, terminant le rendez-vous
+
+## Algorithme de rendez-vous
+
+1. Attendre le déclenchement du rendez-vous
+2. Récupérer les positions actuelles des robots
+3. Assigner à chaque robot la position de l'autre comme cible
+4. Surveiller la distance entre les robots
+5. Si la distance est inférieure à un seuil (3.0), arrêter les robots

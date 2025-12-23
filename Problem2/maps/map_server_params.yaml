@@ -1,0 +1,3 @@
+map_server:
+    ros__parameters:
+        yaml_filename: "/media/22013326/homelinux/ros2_ws/src/exercice2/maps/maze.yaml"

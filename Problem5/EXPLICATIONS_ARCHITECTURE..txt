@@ -1,0 +1,140 @@
+# Architecture ROS - Exercice 5
+
+#Disclaimer ! : Les fichiers map,launch et autres de ce travail ont été faits en TP, je n'ai fait que les réutilisee
+
+## Objectif
+Implémenter un convoi de robots utilisant les algorithmes Best_Response et JESP pour calculer la politique jointe dans un environnement stochastique.
+
+## Nodes
+
+1. **robot_controller**
+   - Gère le comportement individuel de chaque robot
+   - Implémente le suivi de chemin et l'application des politiques
+   - Gère les interactions avec l'environnement stochastique
+
+2. **convoy_manager**
+   - Détermine le leader du convoi (robot le plus proche de la destination)
+   - Organise la formation du convoi
+   - Envoie les commandes de suivi aux robots
+
+3. **best_response**
+   - Implémente l'algorithme Best_Response qu'on a vu en cours et en TP
+   - Calcule une politique optimale pour chaque robot
+   - Publie la politique calculée
+
+4. **jesp**
+   - Implémente l'algorithme JESP (Joint Equilibrium-based Search for Policies)
+   - Calcule une politique jointe pour tous les robots
+   - Publie la politique calculée
+
+5. **robot_markers**
+   - Crée des marqueurs visuels pour RViz
+   - Visualise les robots et leurs trajectoires
+
+6. **map_server** (de nav2)
+   - Fournit la carte de l'environnement
+
+7. **lifecycle_manager_map** (de nav2)
+   - Gère le cycle de vie du map_server
+
+8. **rviz2**
+   - Visualise l'environnement et les robots
+
+## Topics
+
+1. **/robot_[id]/current_position** (geometry_msgs/PoseStamped)
+   - Position actuelle de chaque robot
+   - Publié par: robot_controller
+   - Souscrit par: convoy_manager, robot_markers, autres robots
+
+2. **/robot_[id]/target_position** (geometry_msgs/Point)
+   - Position cible individuelle pour chaque robot
+   - Publié par: convoy_manager
+   - Souscrit par: robot_controller
+
+3. **/set_destination** (geometry_msgs/Point)
+   - Destination finale pour le convoi
+   - Publié par: utilisateur (via commande)
+   - Souscrit par: convoy_manager, robot_controller
+
+4. **/robot_[id]/follow_robot** (std_msgs/Int32)
+   - ID du robot à suivre
+   - Publié par: convoy_manager
+   - Souscrit par: robot_controller
+
+5. **/robot_[id]/stop_command** (std_msgs/Bool)
+   - Commande d'arrêt pour un robot
+   - Publié par: convoy_manager
+   - Souscrit par: robot_controller
+
+6. **/jesp_policy** (std_msgs/String)
+   - Politique calculée par l'algorithme JESP
+   - Publié par: jesp
+   - Souscrit par: robot_controller
+
+7. **/best_response_policy** (std_msgs/String)
+   - Politique calculée par l'algorithme Best_Response
+   - Publié par: best_response
+   - Souscrit par: robot_controller
+
+8. **/visualization_marker** (visualization_msgs/MarkerArray)
+   - Marqueurs pour visualiser les robots
+   - Publié par: robot_markers
+   - Souscrit par: RViz
+
+## Services
+
+1. **/map_server/map** (nav_msgs/GetMap)
+   - Fournit la carte de l'environnement
+   - Fourni par: map_server
+   - Utilisé par: robot_controller
+
+## Algorithmes utilisés
+
+1. **A*** (astar.py)
+   - Utilisé pour la planification de chemin
+   - Implémenté dans la classe AStar
+
+2. **Best_Response** (best_response.py)
+   - Algorithme itératif qui optimise la politique d'un agent en fixant les politiques des autres
+   - Converge vers un équilibre de Nash
+
+3. **JESP** (jesp.py)
+   - Joint Equilibrium-based Search for Policies
+   - Améliore itérativement les politiques des agents
+   - Converge vers un optimum local
+
+4. **Environnement stochastique** (stochastic_environment.py)
+   - Modélise les actions stochastiques des robots
+   - Implémente les probabilités de transition (0.8, 0.1, 0.1)
+
+## Flux de données
+
+1. L'utilisateur définit une destination via le topic `/set_destination`
+2. Le convoy_manager détermine le leader (robot le plus proche de la destination)
+3. Les algorithmes best_response et jesp calculent les politiques optimales
+4. Les politiques sont publiées sur les topics `/best_response_policy` et `/jesp_policy`
+5. Les robots reçoivent les politiques et les utilisent pour déterminer leurs actions
+6. Le convoy_manager organise la formation du convoi en assignant qui suit qui
+7. Les robots suivent leurs cibles en utilisant A* ou les politiques calculées
+8. Les positions des robots sont publiées et visualisées dans RViz
+
+## Modèle stochastique
+
+Les actions des robots sont stochastiques avec les probabilités suivantes:
+- 80% de chance d'atteindre la case cible
+- 10% de chance d'atteindre une case voisine (à gauche)
+- 10% de chance d'atteindre une case voisine (à droite)
+
+Si une case n'a qu'un seul voisin, la distribution est:
+- 80% de chance d'atteindre la case cible
+- 20% de chance d'atteindre la case voisine
+
+## Réalisation
+
+Ce projet a été réalisé individuellement. J'ai implémenté:
+- L'architecture ROS complète
+- Les algorithmes Best_Response et JESP(vus en cours)
+- Le modèle stochastique(donné dans l'énoncé)
+- La gestion du convoi
+- La visualisation

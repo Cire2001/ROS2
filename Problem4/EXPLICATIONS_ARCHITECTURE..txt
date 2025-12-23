@@ -1,0 +1,105 @@
+# Architecture ROS - Exercice 4
+
+## Objectif
+Implémenter deux robots de surveillance qui doivent surveiller plusieurs points(6) dans un environnement en utilisant deux méthodes: planification jointe et théorie des jeux (minimax d'après notre professeur de TP).
+
+## Nodes
+
+1. **surveillance_robot**
+   - Gère le comportement individuel de chaque robot
+   - Implémente le suivi de chemin et la surveillance des points
+   - Publie sa position et son statut
+   - Reçoit des commandes de cible
+
+2. **joint_planner**
+   - Implémente l'algorithme de planification jointe
+   - Coordonne les actions des deux robots pour maximiser l'utilité globale
+   - Assigne des points de surveillance aux robots
+
+3. **minimax_planner**
+   - Implémente l'algorithme minimax de théorie des jeux
+   - Chaque robot optimise sa propre utilité en tenant compte des actions de l'autre
+   - Assigne des points de surveillance aux robots
+
+4. **map_server** (de nav2)
+   - Fournit la carte de l'environnement
+
+5. **lifecycle_manager_map** (de nav2)
+   - Gère le cycle de vie du map_server
+
+6. **rviz2**
+   - Visualise l'environnement, les robots et les points de surveillance
+
+## Topics
+
+1. **/robot_[id]/current_position** (geometry_msgs/PoseStamped)
+   - Position actuelle de chaque robot
+   - Publié par: surveillance_robot
+   - Souscrit par: joint_planner ou minimax_planner
+
+2. **/robot_[id]/target_position** (geometry_msgs/Point)
+   - Position cible pour chaque robot
+   - Publié par: joint_planner ou minimax_planner
+   - Souscrit par: surveillance_robot
+
+3. **/robot_[id]/status** (std_msgs/String)
+   - Statut du robot ('idle', 'moving', 'surveilling')
+   - Publié par: surveillance_robot
+   - Souscrit par: joint_planner ou minimax_planner
+
+4. **/robot_[id]/stop_command** (std_msgs/Bool)
+   - Commande d'arrêt pour un robot
+   - Publié par: joint_planner ou minimax_planner
+   - Souscrit par: surveillance_robot
+
+5. **/robot_[id]/marker** (visualization_msgs/Marker)
+   - Marqueur pour visualiser le robot
+   - Publié par: surveillance_robot
+   - Souscrit par: RViz
+
+6. **/surveillance_points** (visualization_msgs/MarkerArray)
+   - Marqueurs pour visualiser les points de surveillance
+   - Publié par: joint_planner ou minimax_planner
+   - Souscrit par: RViz
+
+## Services
+
+1. **/map_server/map** (nav_msgs/GetMap)
+   - Fournit la carte de l'environnement
+   - Fourni par: map_server
+   - Utilisé par: surveillance_robot, joint_planner, minimax_planner
+
+## Algorithmes utilisés
+
+1. **A*** (astar.py)
+   - Utilisé pour la planification de chemin
+   - Implémenté dans la classe AStar
+
+2. **Planification jointe** (joint_planner.py)
+   - Optimise l'utilité globale des deux robots
+   - Évalue toutes les combinaisons possibles d'assignation de points
+   - Choisit la combinaison qui maximise l'utilité totale
+
+3. **Minimax** (minimax_planner.py)
+   - Algorithme de théorie des jeux
+   - Chaque robot optimise sa propre utilité en tenant compte des actions de l'autre
+   - Converge vers un équilibre de Nash
+
+## Flux de données
+
+1. Les planners (joint_planner ou minimax_planner) génèrent des points de surveillance aléatoires
+2. Les robots publient leurs positions et statuts
+3. Le planner reçoit ces informations et détermine les meilleures cibles pour chaque robot
+4. Le planner publie les cibles sur les topics appropriés
+5. Les robots reçoivent leurs cibles et se déplacent vers elles en utilisant A*
+6. Une fois arrivés, les robots effectuent une surveillance pendant un temps défini
+7. Après la surveillance, les robots signalent qu'ils sont à nouveau disponibles
+8. Le cycle recommence
+
+## Réalisation
+
+Ce projet a été réalisé individuellement. J'ai implémenté:
+- L'architecture ROS complète
+- Les algorithmes de planification jointe et minimax
+- La gestion des robots de surveillance
+- La visualisation

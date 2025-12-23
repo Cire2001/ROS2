@@ -1,0 +1,93 @@
+Architecture ROS - Exercice 1
+Objectif
+
+Permettre à plusieurs robots de se diriger vers une même destination dans un environnement, en s'assurant qu'aucun robot n'occupe exactement la destination mais se place à la position libre la plus proche.
+Nodes
+
+    robot_controller
+        Gère le comportement de plusieurs robots simultanément (3 robots par défaut)
+        Calcule les trajectoires via l'algorithme A*
+        Déplace les robots le long de leur chemin calculé
+        Publie les positions des robots
+    destination_manager
+        Gère la destination commune
+        Reçoit les positions des robots
+        Calcule les positions optimales autour de la destination
+        Attribue une position cible à chaque robot
+    map_server (de nav2)
+        Fournit la carte de l'environnement (labyrinthe)
+    lifecycle_manager_map (de nav2)
+        Gère le cycle de vie du map_server
+    rviz2
+        Visualise l'environnement, les robots et la destination
+
+Topics
+
+    /robot_[id]/current_position (geometry_msgs/PoseStamped)
+        Position actuelle de chaque robot
+        Publié par: robot_controller
+        Souscrit par: destination_manager
+    /robot_[id]/target_position (geometry_msgs/Point)
+        Position cible attribuée à chaque robot
+        Publié par: destination_manager
+        Souscrit par: robot_controller
+    /robot_position (geometry_msgs/PoseStamped)
+        Position globale publiée pour tous les robots
+        Publié par: robot_controller
+        Utilisé pour le debugging et la visualisation
+    /clicked_point (geometry_msgs/PointStamped)
+        Point cliqué dans RViz pour définir la destination
+        Publié par: RViz
+        Souscrit par: destination_manager
+    /set_destination (geometry_msgs/Point)
+        Définit la destination via un message programmatique
+        Souscrit par: destination_manager
+    /map (nav_msgs/OccupancyGrid)
+        Carte de l'environnement
+        Publié par: map_server
+        Utilisé par: robot_controller, destination_manager
+
+Services
+
+    /map_server/map (nav_msgs/GetMap)
+        Fournit la carte de l'environnement
+        Fourni par: map_server
+        Utilisé par: robot_controller
+
+Algorithmes utilisés
+
+    A* (astar.py)
+        Utilisé pour la planification de chemin des robots
+        Trouve le chemin optimal entre la position actuelle et la cible
+        Prend en compte les obstacles de la carte
+    Génération de positions autour (destination_manager.py)
+        Distribue les robots en cercle autour de la destination
+        Assure qu'aucun robot n'occupe exactement la destination
+
+Classes utilitaires
+
+    Vec2D (vec2d.py)
+        Implémente les opérations vectorielles 2D
+        Utilisée pour gérer les positions et les calculs
+    Map2D (map2d.py)
+        Encapsule la carte et fournit des méthodes d'accès
+        Convertit les coordonnées et détecte les murs
+
+Flux de données
+
+    L'utilisateur définit une destination en cliquant dans RViz ou en publiant sur le topic /set_destination
+    Le destination_manager reçoit cette destination
+    Le destination_manager calcule les positions optimales autour de la destination
+    Le destination_manager attribue ces positions aux robots via les topics /robot_[id]/target_position
+    Les robot_controller calculent un chemin vers leur position cible respective
+    Les robot_controller déplacent les robots le long de ces chemins et publient leurs positions
+    RViz visualise les robots et leur déplacement
+
+Réalisation
+
+J'ai implémenté l'intégralité de ce projet, en m'appuyant sur les outils fournis en cours:
+
+    Développement de l'architecture ROS
+    Implémentation de l'algorithme A*
+    Création du système de génération de positions
+    Configuration de la visualisation
